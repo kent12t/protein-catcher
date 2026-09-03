@@ -30,12 +30,15 @@ function App() {
   const [flash, setFlash] = useState('')
   const gameRef = useRef<HTMLDivElement>(null)
   const plateXRef = useRef(50)
+  const fallingRef = useRef<FallingFood[]>([])
   const dragging = useRef(false)
   const nextId = useRef(100)
 
   const startGame = () => {
     setProtein(0); setCaught([]); setFalling([]); setPlateX(50)
+    fallingRef.current = []
     plateXRef.current = 50
+    dragging.current = false
     setScreen('game')
   }
 
@@ -57,35 +60,37 @@ function App() {
       const delta = Math.min(elapsed / 16.67, 2)
       previous = time
       spawnTimer += elapsed
-      setFalling((items) => {
-        let updated = items.map((item) => ({ ...item, y: item.y + item.speed * delta }))
-        const collected: FallingFood[] = []
-        updated = updated.filter((item) => {
-          const hit = item.y >= 70 && item.y <= 88 && Math.abs(item.x - plateXRef.current) < 12
+      const collected: FallingFood[] = []
+      fallingRef.current = fallingRef.current
+        .map((item) => ({ ...item, y: item.y + item.speed * delta }))
+        .filter((item) => {
+          const hit = item.y >= 79 && item.y <= 89 && Math.abs(item.x - plateXRef.current) < 8
           if (hit) collected.push(item)
           return !hit && item.y < 105
         })
-        if (collected.length) {
-          const gained = collected.reduce((sum, item) => sum + item.protein, 0)
-          setCaught((current) => [...current, ...collected])
-          setFlash(`+${gained} g`)
-          window.setTimeout(() => setFlash(''), 700)
-          setProtein((current) => {
-            const next = current + gained
-            if (next >= TARGET) window.setTimeout(() => setScreen('summary'), 550)
-            return next
-          })
-        }
-        return updated
-      })
+      if (collected.length) {
+        const gained = collected.reduce((sum, item) => sum + item.protein, 0)
+        setCaught((current) => [...current, ...collected])
+        setFlash(`+${gained} g`)
+        window.setTimeout(() => setFlash(''), 700)
+        setProtein((current) => {
+          const next = current + gained
+          if (next >= TARGET) {
+            dragging.current = false
+            window.setTimeout(() => setScreen('summary'), 550)
+          }
+          return next
+        })
+      }
       if (spawnTimer > 1050) {
         spawnTimer = 0
         const food = FOODS[Math.floor(Math.random() * FOODS.length)]
-        setFalling((items) => [...items, {
+        fallingRef.current.push({
           ...food, id: nextId.current++, x: 10 + Math.random() * 80, y: -12,
           speed: 0.48 + Math.random() * 0.2,
-        }])
+        })
       }
+      setFalling([...fallingRef.current])
       frame = requestAnimationFrame(tick)
     }
     frame = requestAnimationFrame(tick)
@@ -144,6 +149,10 @@ function App() {
       </div>
       <footer className="summary-actions">
         <p>Aim to spread protein across 3 meals — about <strong>25 g each meal</strong>.</p>
+        <a className="qr-link" href="https://www.healthhub.sg/well-being-and-lifestyle/active-ageing/seniors-need-more-protein" target="_blank" rel="noreferrer">
+          <img src="/qr.svg" alt="QR code for the HealthHub protein guide" />
+          <span><strong>Read more</strong><small>Scan for the HealthHub guide</small></span>
+        </a>
         <button className="primary-button" onClick={startGame}>Play again ↻</button>
       </footer>
     </main>
@@ -157,7 +166,7 @@ function App() {
       <header className="game-header">
         <div><span className="game-mark">P</span><strong>Protein Plate</strong></div>
         <p>Move the plate. Catch nourishing foods.</p>
-        <button onClick={() => setScreen('start')} aria-label="Exit game">×</button>
+        <button onClick={() => { dragging.current = false; setScreen('start') }} aria-label="Exit game">×</button>
       </header>
       <div className="progress-wrap" aria-label={`${Math.min(protein, TARGET)} of ${TARGET} grams of protein`}>
         <div className="progress-copy"><strong>{Math.min(protein, TARGET)} g collected</strong><span>Goal: {TARGET} g</span></div>
@@ -166,8 +175,8 @@ function App() {
       <section className="play-field">
         <div className="cloud cloud-a">☁</div><div className="cloud cloud-b">☁</div>
         {falling.map((food) => <div className="falling-food" key={food.id}
-          style={{ left: `${food.x}%`, top: `${food.y}%`, background: food.color }}>
-          <span>{food.emoji}</span><small>+{food.protein} g</small>
+          style={{ left: `${food.x}%`, top: `${food.y}%` }}>
+          <span>{food.emoji}</span>
         </div>)}
         <div className={`catch-flash ${flash ? 'show' : ''}`} style={{ left: `${plateX}%` }}>{flash}</div>
         <div className="plate-control" style={{ left: `${plateX}%` }}
@@ -183,7 +192,15 @@ function App() {
             if (event.key === 'ArrowLeft') movePlate(bounds.left + ((plateX - 5) / 100) * bounds.width)
             if (event.key === 'ArrowRight') movePlate(bounds.left + ((plateX + 5) / 100) * bounds.width)
           }}>
-          <div className="plate-food">🥗</div><div className="plate-rim" /><span className="drag-hint">↔ drag me</span>
+          <div className="plate-stack">
+            {caught.slice(-6).map((food, index) => (
+              <span key={`${food.id}-${index}`} style={{
+                left: `${50 + (index - 2.5) * 12}%`,
+                transform: `translateX(-50%) rotate(${(index - 2.5) * 5}deg)`,
+              }}>{food.emoji}</span>
+            ))}
+          </div>
+          <div className="plate-rim" /><span className="drag-hint">↔ Drag the plate left and right</span>
         </div>
       </section>
     </main>
