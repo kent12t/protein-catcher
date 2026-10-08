@@ -1,14 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Nunito:wght@700;800;900&display=swap');
+@font-face { font-family:'Circular'; src:url('/fonts/CircularStd-Book.otf'); }
+@font-face { font-family:'Circular'; src:url('/fonts/CircularStd-Bold.otf'); font-weight:700; }
+@font-face { font-family:'Windsor'; src:url('/fonts/WindsorProRg.TTF'); }
 
 :root {
-  font-family: 'Atkinson Hyperlegible', Arial, sans-serif;
-  color: #20382f;
-  background: #fbf7ec;
+  font-family: 'Circular', Arial, sans-serif;
+  color: #111;
+  background: #fff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
 body { margin: 0; min-width: 320px; min-height: 100vh; }
-button { font-family: 'Nunito', 'Atkinson Hyperlegible', sans-serif; }
-h1, h2, strong, b { font-family: 'Nunito', 'Atkinson Hyperlegible', sans-serif; }
+button { font-family:inherit; }

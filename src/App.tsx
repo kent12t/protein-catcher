@@ -1,45 +1,54 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 
-type Screen = 'start' | 'game' | 'summary'
-type Food = { id: number; name: string; emoji: string; protein: number; serving: string; color: string }
+type Screen = 'title' | 'calculator' | 'ready' | 'game' | 'summary'
+type Food = { id: number; name: string; image: string; protein: number }
 type FallingFood = Food & { x: number; y: number; speed: number }
 
-const TARGET = 75
 const FOODS: Food[] = [
-  { id: 1, name: 'Egg', emoji: '🥚', protein: 7, serving: '1 large egg', color: '#fff0c7' },
-  { id: 2, name: 'Firm tofu', emoji: '◻️', protein: 10, serving: '75 g', color: '#e6f1d0' },
-  { id: 3, name: 'Chicken', emoji: '🍗', protein: 22, serving: '90 g, palm-sized', color: '#ffd2ac' },
-  { id: 4, name: 'Fish', emoji: '🐟', protein: 20, serving: '90 g, palm-sized', color: '#cce9f2' },
-  { id: 5, name: 'Soya milk', emoji: '🥛', protein: 10, serving: '250 ml glass', color: '#e5dcf6' },
-  { id: 6, name: 'Tempeh', emoji: '🫘', protein: 12, serving: '60 g', color: '#f0d6aa' },
-]
-const PALM_GUIDE = [
-  { emoji: '🍗', title: 'Lean meat, fish or poultry', amount: '1 palm (90 g)', protein: '20–25 g' },
-  { emoji: '🥚', title: 'Eggs', amount: '3 eggs (150 g)', protein: '20–25 g' },
-  { emoji: '◻️', title: 'Firm tofu', amount: '2 small blocks (150 g)', protein: '20–25 g' },
-  { emoji: '🥛', title: 'Low-fat or soya milk', amount: '2 glasses (500 ml)', protein: '20–25 g' },
+  { id: 1, name: 'Egg', image: 'egg1.webp', protein: 6 },
+  { id: 2, name: 'Chicken', image: 'chicken.webp', protein: 25 },
+  { id: 3, name: 'Fish', image: 'fish.webp', protein: 25 },
+  { id: 4, name: 'Prawn', image: 'shrimp.webp', protein: 18 },
+  { id: 5, name: 'Milk', image: 'milk.webp', protein: 6 },
+  { id: 6, name: 'Tofu', image: 'tofu.webp', protein: 10 },
+  { id: 7, name: 'Tempeh', image: 'tempe2.webp', protein: 12 },
+  { id: 8, name: 'Edamame', image: 'edamame.webp', protein: 11 },
+  { id: 9, name: 'Beef', image: 'beef.webp', protein: 25 },
+  { id: 10, name: 'Tuna', image: 'tuna.webp', protein: 20 },
+  { id: 11, name: 'Yoghurt', image: 'yoghurt.webp', protein: 8 },
 ]
 
 function App() {
-  const [screen, setScreen] = useState<Screen>('start')
+  const [screen, setScreen] = useState<Screen>('title')
+  const [weight, setWeight] = useState('')
+  const [overFifty, setOverFifty] = useState(true)
   const [protein, setProtein] = useState(0)
+  const [seconds, setSeconds] = useState(15)
   const [caught, setCaught] = useState<Food[]>([])
   const [falling, setFalling] = useState<FallingFood[]>([])
   const [plateX, setPlateX] = useState(50)
-  const [flash, setFlash] = useState('')
+  const [showHint, setShowHint] = useState(true)
+  const [countdown, setCountdown] = useState(5)
   const gameRef = useRef<HTMLDivElement>(null)
   const plateXRef = useRef(50)
   const fallingRef = useRef<FallingFood[]>([])
   const dragging = useRef(false)
   const nextId = useRef(100)
+  const target = Math.max(1, Math.round((Number(weight) || 0) * (overFifty ? 1.2 : 0.8)))
 
   const startGame = () => {
     setProtein(0); setCaught([]); setFalling([]); setPlateX(50)
+    setSeconds(15); setShowHint(true); setCountdown(5)
     fallingRef.current = []
     plateXRef.current = 50
     dragging.current = false
-    setScreen('game')
+    setScreen('ready')
+  }
+
+  const enterDigit = (digit: string) => {
+    if (weight.length >= 3 || (weight === '0' && digit === '0')) return
+    setWeight((current) => current === '0' ? digit : current + digit)
   }
 
   const movePlate = useCallback((clientX: number) => {
@@ -48,7 +57,38 @@ function App() {
     const percent = Math.max(9, Math.min(91, ((clientX - bounds.left) / bounds.width) * 100))
     plateXRef.current = percent
     setPlateX(percent)
+    setShowHint(false)
   }, [])
+
+  useEffect(() => {
+    if (screen !== 'ready') return
+    const timer = window.setInterval(() => {
+      setCountdown((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer)
+          setScreen('game')
+          return 1
+        }
+        return current - 1
+      })
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [screen])
+
+  useEffect(() => {
+    if (screen !== 'game') return
+    const timer = window.setInterval(() => {
+      setSeconds((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer)
+          setScreen('summary')
+          return 0
+        }
+        return current - 1
+      })
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [screen])
 
   useEffect(() => {
     if (screen !== 'game') return
@@ -71,11 +111,9 @@ function App() {
       if (collected.length) {
         const gained = collected.reduce((sum, item) => sum + item.protein, 0)
         setCaught((current) => [...current, ...collected])
-        setFlash(`+${gained} g`)
-        window.setTimeout(() => setFlash(''), 700)
         setProtein((current) => {
           const next = current + gained
-          if (next >= TARGET) {
+          if (next >= target) {
             dragging.current = false
             window.setTimeout(() => setScreen('summary'), 550)
           }
@@ -95,7 +133,7 @@ function App() {
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [screen])
+  }, [screen, target])
 
   const totals = caught.reduce<Record<string, { food: Food; count: number }>>((result, food) => {
     result[food.name] ??= { food, count: 0 }
@@ -103,84 +141,110 @@ function App() {
     return result
   }, {})
 
-  if (screen === 'start') return (
-    <main className="start-screen">
-      <div className="leaf leaf-one" /><div className="leaf leaf-two" />
-      <section className="intro-card">
-        <div className="eyebrow">A healthy ageing mini-game</div>
-        <div className="hero-icon" aria-hidden="true">💪</div>
-        <h1>Catch your daily strength</h1>
-        <p className="lead">Protein helps maintain muscles, movement and independence as we age.</p>
-        <div className="target-card"><span className="target-number">75 g</span><span>today’s protein goal</span></div>
-        <p className="explain">Adults aged 50 and above need about <strong>1.2 g per kg of body weight</strong>. That works out to 75 g for a 62.5 kg adult.</p>
-        <button className="primary-button" onClick={startGame}>Let’s start <span>→</span></button>
-        <a className="source-link" href="https://www.healthhub.sg/well-being-and-lifestyle/active-ageing/seniors-need-more-protein" target="_blank" rel="noreferrer">Learn more from HealthHub ↗</a>
+  if (screen === 'title') return (
+    <main className="gingham-screen title-screen">
+      <section>
+        <h1>PROTEIN MUNCHER</h1>
+        <p>Do you know how much<br />protein you need in a day?</p>
+        <button className="image-button start-button" aria-label="Start" onClick={() => setScreen('calculator')} />
+      </section>
+      <img className="title-food" src="/misc/title_plate.webp" alt="A plate of protein-rich foods" />
+    </main>
+  )
+
+  if (screen === 'calculator') return (
+    <main className="gingham-screen calculator-screen">
+      <section className="calculator">
+        <h2>Enter your weight and select your age group<br />to get your daily protein intake</h2>
+        <div className="calculator-grid">
+          <div className="weight-column">
+            <label>Weight</label>
+            <div className={`weight-display ${weight ? '' : 'placeholder'}`}><strong>{weight || '65'}</strong><span>kg</span></div>
+            <div className="numpad">
+              {['1','2','3','4','5','6','7','8','9'].map((key) =>
+                <button key={key} onClick={() => enterDigit(key)}>{key}</button>)}
+              <span />
+              <button onClick={() => enterDigit('0')}>0</button>
+              <button aria-label="Delete last digit" onClick={() => setWeight((value) => value.slice(0, -1))}>←</button>
+            </div>
+          </div>
+          <div className="age-column">
+            <h3>Age group:</h3><p>(Select your age group)</p>
+            <div className="age-options">
+              <label><input type="radio" checked={overFifty} onChange={() => setOverFifty(true)} /> <span>&gt;50 years old</span></label>
+              <label><input type="radio" checked={!overFifty} onChange={() => setOverFifty(false)} /> <span>&lt;50 years old</span></label>
+            </div>
+            <p className="calculation">You will need <b>{weight || '—'}</b> kg x <b className="orange">{overFifty ? '1.2' : '0.8'}</b> g = <strong>{weight ? target : '—'}</strong> g of protein</p>
+            <p className="tip"><b>Pro tip:</b><br />If you’re 50 and above, you’ll need an estimated 1.2g of protein per kg of body weight daily.<br />If you’re below 50, an estimated 0.8g per kg daily is enough.</p>
+          </div>
+        </div>
+        <button className="image-button calculator-start" aria-label="Start game" disabled={!weight} onClick={startGame} />
       </section>
     </main>
   )
 
-  if (screen === 'summary') return (
-    <main className="summary-screen">
-      <header className="summary-header">
-        <div><div className="eyebrow light">Daily goal complete</div><h1>Wonderful catch!</h1><p>You collected <strong>{protein} g of protein</strong> today.</p></div>
-        <div className="goal-ring"><strong>{protein}</strong><span>grams</span></div>
-      </header>
-      <div className="summary-grid">
-        <section className="panel eaten-panel">
-          <h2>What you caught</h2><p className="muted">A playful estimate based on standard servings.</p>
-          <div className="meal-list">
-            {Object.values(totals).map(({ food, count }) => (
-              <div className="meal-row" key={food.name}>
-                <span className="mini-food" style={{ background: food.color }}>{food.emoji}</span>
-                <span><strong>{food.name}</strong><small>{count} × {food.serving}</small></span><b>{food.protein * count} g</b>
-              </div>
-            ))}
-          </div>
-        </section>
-        <section className="panel guide-panel">
-          <h2>What does 20–25 g look like?</h2><p className="muted">Simple serving examples from HealthHub.</p>
-          <div className="guide-grid">
-            {PALM_GUIDE.map((item) => <article key={item.title}>
-              <span className="guide-emoji">{item.emoji}</span>
-              <div><strong>{item.title}</strong><small>{item.amount}</small></div><b>{item.protein}</b>
-            </article>)}
-          </div>
-        </section>
-      </div>
-      <footer className="summary-actions">
-        <p>Aim to spread protein across 3 meals — about <strong>25 g each meal</strong>.</p>
-        <a className="qr-link" href="https://www.healthhub.sg/well-being-and-lifestyle/active-ageing/seniors-need-more-protein" target="_blank" rel="noreferrer">
-          <img src="/qr.svg" alt="QR code for the HealthHub protein guide" />
-          <span><strong>Read more</strong><small>Scan for the HealthHub guide</small></span>
-        </a>
-        <button className="primary-button" onClick={startGame}>Play again ↻</button>
-      </footer>
+  if (screen === 'ready') return (
+    <main className="ready-screen">
+      <div className="scene-bricks" />
+      <div className="scene-blur" />
+      <section className="instructions">
+        <p><b>1</b> Hold and drag the plate left and right</p>
+        <p><b>2</b> Collect <strong>{target}g</strong> of protein in 15 seconds</p>
+        <h1>{countdown}</h1>
+      </section>
     </main>
   )
 
+  if (screen === 'summary') {
+    const won = protein >= target
+    return (
+      <main className="summary-screen">
+        <div className="scene-bricks" />
+        <div className="scene-blur" />
+        <div className="scene-wash" />
+        <img className="end-screen" src="/background/end_screen.webp" alt="" />
+        <section className="result-panel">
+          <h1 className={won ? 'win' : 'lose'}>{won ? 'GOOD JOB!' : 'OH NO!'}</h1>
+          <h2 className={won ? 'win' : 'lose'}>{won ? 'You ate enough protein today!' : "You didn’t eat enough protein today!"}</h2>
+          <p>Your daily protein goal: <strong>{target}g</strong><br />Protein eaten today: <strong className="eaten">{protein}g</strong></p>
+          <div className="eaten-list">
+            {Object.values(totals).map(({ food, count }) => <div key={food.name}><span>{food.name}{count > 1 ? ` x${count}` : ''}</span><i /><b>{food.protein * count}g</b></div>)}
+          </div>
+          <div className="result-actions">
+            <button onClick={() => setScreen('title')}>RESTART</button>
+            <a href="https://www.healthhub.sg/well-being-and-lifestyle/active-ageing/seniors-need-more-protein" target="_blank" rel="noreferrer">
+              <img src="/qr/qrcode.svg" alt="HealthHub protein guide QR code" /><span>Tips on Healthier<br />Eating Habits</span>
+            </a>
+          </div>
+        </section>
+        <section className="cheatsheet-panel">
+          <img className="end-title" src="/misc/end_title.webp" alt="Mix and match to meet your daily protein goal" />
+          <div className="cheatsheet-grid">{Array.from({ length: 12 }, (_, index) => <img key={index} src={`/cheatsheet/cheatsheet_${index + 1}.webp`} alt="" />)}</div>
+        </section>
+      </main>
+    )
+  }
+
   return (
     <main className="game-screen" ref={gameRef}
+      onDragStart={(event) => event.preventDefault()}
       onPointerMove={(event) => dragging.current && movePlate(event.clientX)}
       onPointerUp={() => { dragging.current = false }}
       onPointerCancel={() => { dragging.current = false }}>
-      <header className="game-header">
-        <div><span className="game-mark">P</span><strong>Protein Plate</strong></div>
-        <p>Move the plate. Catch nourishing foods.</p>
-        <button onClick={() => { dragging.current = false; setScreen('start') }} aria-label="Exit game">×</button>
-      </header>
-      <div className="progress-wrap" aria-label={`${Math.min(protein, TARGET)} of ${TARGET} grams of protein`}>
-        <div className="progress-copy"><strong>{Math.min(protein, TARGET)} g collected</strong><span>Goal: {TARGET} g</span></div>
-        <div className="progress-track"><div style={{ width: `${Math.min((protein / TARGET) * 100, 100)}%` }} /></div>
+      <p className="game-instruction">Catch protein-rich foods by dragging<br />the plate to meet your daily goal!</p>
+      <div className={`timer ${seconds <= 5 ? 'ending' : ''}`}>00:{String(seconds).padStart(2, '0')}</div>
+      <div className="protein-meter" aria-label={`${protein} of ${target} grams of protein`}>
+        <span>{target}g</span><div><i style={{ height: `${Math.min((protein / target) * 100, 100)}%` }}><b>{protein}</b></i></div>
       </div>
       <section className="play-field">
-        <div className="cloud cloud-a">☁</div><div className="cloud cloud-b">☁</div>
         {falling.map((food) => <div className="falling-food" key={food.id}
           style={{ left: `${food.x}%`, top: `${food.y}%` }}>
-          <span>{food.emoji}</span>
+          <img src={`/food/${food.image}`} alt={food.name} draggable={false} />
         </div>)}
-        <div className={`catch-flash ${flash ? 'show' : ''}`} style={{ left: `${plateX}%` }}>{flash}</div>
         <div className="plate-control" style={{ left: `${plateX}%` }}
+          onDragStart={(event) => event.preventDefault()}
           onPointerDown={(event) => {
+            event.preventDefault()
             dragging.current = true
             event.currentTarget.setPointerCapture(event.pointerId)
             movePlate(event.clientX)
@@ -197,11 +261,12 @@ function App() {
               <span key={`${food.id}-${index}`} style={{
                 left: `${50 + (index - 2.5) * 12}%`,
                 transform: `translateX(-50%) rotate(${(index - 2.5) * 5}deg)`,
-              }}>{food.emoji}</span>
+              }}><img src={`/food/${food.image}`} alt="" draggable={false} /></span>
             ))}
           </div>
-          <div className="plate-rim" /><span className="drag-hint">↔ Drag the plate left and right</span>
+          <img className="bowl" src="/misc/bowl.webp" alt="Bowl" draggable={false} />
         </div>
+        <img className={`drag-arrow ${showHint ? '' : 'hidden'}`} src="/misc/arrow.webp" alt="Drag left and right" draggable={false} />
       </section>
     </main>
   )
