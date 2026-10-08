@@ -6,18 +6,18 @@ type Food = { id: number; name: string; image: string; protein: number }
 type FallingFood = Food & { x: number; y: number; speed: number }
 
 const FOODS: Food[] = [
-  { id: 1, name: 'Egg', image: 'egg1.webp', protein: 6 },
-  { id: 2, name: 'Chicken', image: 'chicken.webp', protein: 25 },
-  { id: 3, name: 'Fish', image: 'fish.webp', protein: 25 },
-  { id: 4, name: 'Prawn', image: 'shrimp.webp', protein: 18 },
-  { id: 5, name: 'Milk', image: 'milk.webp', protein: 6 },
-  { id: 6, name: 'Tofu', image: 'tofu.webp', protein: 10 },
-  { id: 7, name: 'Tempeh', image: 'tempe2.webp', protein: 12 },
-  { id: 8, name: 'Edamame', image: 'edamame.webp', protein: 11 },
-  { id: 9, name: 'Beef', image: 'beef.webp', protein: 25 },
-  { id: 10, name: 'Tuna', image: 'tuna.webp', protein: 20 },
-  { id: 11, name: 'Yoghurt', image: 'yoghurt.webp', protein: 8 },
-]
+  { id: 1, name: "Egg", image: "egg1.webp", protein: 6 }, // 1 large egg = ~6g
+  { id: 2, name: "Chicken", image: "chicken.webp", protein: 25 }, // ~100g breast = ~25-30g
+  { id: 3, name: "Fish", image: "fish.webp", protein: 22 }, // 1 salmon fillet portion = ~20-25g
+  { id: 4, name: "Prawn", image: "shrimp.webp", protein: 2 }, // 1 single prawn = ~2g
+  { id: 5, name: "Milk", image: "milk.webp", protein: 8 }, // 1 cup (240ml) = ~8g
+  { id: 6, name: "Tofu", image: "tofu.webp", protein: 10 }, // ~100g firm tofu = ~10g
+  { id: 7, name: "Tempeh", image: "tempe2.webp", protein: 16 }, // ~100g tempeh = ~18-20g (denser than tofu)
+  { id: 8, name: "Edamame", image: "edamame.webp", protein: 12 }, // 1 small bowl/cup = ~12-14g
+  { id: 9, name: "Beef", image: "beef.webp", protein: 24 }, // 1 small steak portion = ~24-26g
+  { id: 10, name: "Tuna", image: "tuna.webp", protein: 26 }, // 1 standard can = ~26-30g
+  { id: 11, name: "Yoghurt", image: "yoghurt.webp", protein: 15 }, // 1 pot Greek yogurt = ~15-18g
+];
 
 function App() {
   const [screen, setScreen] = useState<Screen>('title')
@@ -104,7 +104,7 @@ function App() {
       fallingRef.current = fallingRef.current
         .map((item) => ({ ...item, y: item.y + item.speed * delta }))
         .filter((item) => {
-          const hit = item.y >= 79 && item.y <= 89 && Math.abs(item.x - plateXRef.current) < 8
+          const hit = item.y >= 74 && item.y <= 84 && Math.abs(item.x - plateXRef.current) < 8
           if (hit) collected.push(item)
           return !hit && item.y < 105
         })
@@ -144,7 +144,7 @@ function App() {
   if (screen === 'title') return (
     <main className="gingham-screen title-screen">
       <section>
-        <h1>PROTEIN MUNCHER</h1>
+        <h1><span className="windsor">PROTEIN MUNCHER</span></h1>
         <p>Do you know how much<br />protein you need in a day?</p>
         <button className="image-button start-button" aria-label="Start" onClick={() => setScreen('calculator')} />
       </section>
@@ -162,10 +162,10 @@ function App() {
             <div className={`weight-display ${weight ? '' : 'placeholder'}`}><strong>{weight || '65'}</strong><span>kg</span></div>
             <div className="numpad">
               {['1','2','3','4','5','6','7','8','9'].map((key) =>
-                <button key={key} onClick={() => enterDigit(key)}>{key}</button>)}
+                <button key={key} onClick={() => enterDigit(key)}><span className="windsor">{key}</span></button>)}
               <span />
-              <button onClick={() => enterDigit('0')}>0</button>
-              <button aria-label="Delete last digit" onClick={() => setWeight((value) => value.slice(0, -1))}>←</button>
+              <button onClick={() => enterDigit('0')}><span className="windsor">0</span></button>
+              <button aria-label="Delete last digit" onClick={() => setWeight((value) => value.slice(0, -1))}><span className="windsor">←</span></button>
             </div>
           </div>
           <div className="age-column">
@@ -189,8 +189,8 @@ function App() {
       <div className="scene-blur" />
       <section className="instructions">
         <p><b>1</b> Hold and drag the plate left and right</p>
-        <p><b>2</b> Collect <strong>{target}g</strong> of protein in 15 seconds</p>
-        <h1>{countdown}</h1>
+        <p><b>2</b> Collect <strong><span className="windsor">{target}g</span></strong> of protein in 15 seconds</p>
+        <h1><span className="windsor">{countdown}</span></h1>
       </section>
     </main>
   )
@@ -204,14 +204,14 @@ function App() {
         <div className="scene-wash" />
         <img className="end-screen" src="/background/end_screen.webp" alt="" />
         <section className="result-panel">
-          <h1 className={won ? 'win' : 'lose'}>{won ? 'GOOD JOB!' : 'OH NO!'}</h1>
+          <h1 className={won ? 'win' : 'lose'}><span className="windsor">{won ? 'GOOD JOB!' : 'OH NO!'}</span></h1>
           <h2 className={won ? 'win' : 'lose'}>{won ? 'You ate enough protein today!' : "You didn’t eat enough protein today!"}</h2>
-          <p>Your daily protein goal: <strong>{target}g</strong><br />Protein eaten today: <strong className="eaten">{protein}g</strong></p>
+          <p>Your daily protein goal: <strong>{target}g</strong><br />Protein eaten today: <strong className={won ? 'eaten' : 'short'}>{protein}g</strong></p>
           <div className="eaten-list">
             {Object.values(totals).map(({ food, count }) => <div key={food.name}><span>{food.name}{count > 1 ? ` x${count}` : ''}</span><i /><b>{food.protein * count}g</b></div>)}
           </div>
           <div className="result-actions">
-            <button onClick={() => setScreen('title')}>RESTART</button>
+            <button aria-label="Restart" onClick={() => setScreen('title')} />
             <a href="https://www.healthhub.sg/well-being-and-lifestyle/active-ageing/seniors-need-more-protein" target="_blank" rel="noreferrer">
               <img src="/qr/qrcode.svg" alt="HealthHub protein guide QR code" /><span>Tips on Healthier<br />Eating Habits</span>
             </a>
@@ -266,7 +266,10 @@ function App() {
           </div>
           <img className="bowl" src="/misc/bowl.webp" alt="Bowl" draggable={false} />
         </div>
-        <img className={`drag-arrow ${showHint ? '' : 'hidden'}`} src="/misc/arrow.webp" alt="Drag left and right" draggable={false} />
+        <div className={`drag-arrows ${showHint ? '' : 'hidden'}`}>
+          <img className="drag-arrow left" src="/misc/arrow.webp" alt="" draggable={false} />
+          <img className="drag-arrow" src="/misc/arrow.webp" alt="Drag left and right" draggable={false} />
+        </div>
       </section>
     </main>
   )
