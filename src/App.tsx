@@ -6,17 +6,17 @@ type Food = { id: number; name: string; image: string; protein: number }
 type FallingFood = Food & { x: number; y: number; speed: number }
 
 const FOODS: Food[] = [
-  { id: 1, name: "Egg", image: "egg1.webp", protein: 6 }, // 1 large egg = ~6g
-  { id: 2, name: "Chicken", image: "chicken.webp", protein: 25 }, // ~100g breast = ~25-30g
-  { id: 3, name: "Fish", image: "fish.webp", protein: 22 }, // 1 salmon fillet portion = ~20-25g
-  { id: 4, name: "Prawn", image: "shrimp.webp", protein: 2 }, // 1 single prawn = ~2g
-  { id: 5, name: "Milk", image: "milk.webp", protein: 8 }, // 1 cup (240ml) = ~8g
-  { id: 6, name: "Tofu", image: "tofu.webp", protein: 10 }, // ~100g firm tofu = ~10g
-  { id: 7, name: "Tempeh", image: "tempe2.webp", protein: 16 }, // ~100g tempeh = ~18-20g (denser than tofu)
-  { id: 8, name: "Edamame", image: "edamame.webp", protein: 12 }, // 1 small bowl/cup = ~12-14g
-  { id: 9, name: "Beef", image: "beef.webp", protein: 24 }, // 1 small steak portion = ~24-26g
-  { id: 10, name: "Tuna", image: "tuna.webp", protein: 26 }, // 1 standard can = ~26-30g
-  { id: 11, name: "Yoghurt", image: "yoghurt.webp", protein: 15 }, // 1 pot Greek yogurt = ~15-18g
+  { id: 1, name: "Egg", image: "egg1.webp", protein: 7 }, // 3 eggs = ~21g
+  { id: 2, name: "Chicken", image: "chicken.webp", protein: 22 }, // 1 palm-sized piece (90g)
+  { id: 3, name: "Fish", image: "fish.webp", protein: 22 }, // 1 palm-sized piece (90g)
+  { id: 4, name: "Prawn", image: "shrimp.webp", protein: 4 }, // ~1/5th of 5-6 prawns
+  { id: 5, name: "Milk", image: "milk.webp", protein: 10 }, // 1 glass (half of 500ml)
+  { id: 6, name: "Tofu", image: "tofu.webp", protein: 10 }, // 1 small block (half of 150g)
+  { id: 7, name: "Tempeh", image: "tempe2.webp", protein: 16 }, // ~3 slices / small block
+  { id: 8, name: "Edamame", image: "edamame.webp", protein: 22 }, // 1 small bowl (200g)
+  { id: 9, name: "Beef", image: "beef.webp", protein: 22 }, // 1 palm-sized piece (90g)
+  { id: 10, name: "Tuna", image: "tuna.webp", protein: 22 }, // 1 portion (half-can serving)
+  { id: 11, name: "Yoghurt", image: "yoghurt.webp", protein: 15 }, // 1 tub Greek yogurt
 ];
 
 function App() {
