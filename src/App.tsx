@@ -37,6 +37,11 @@ function App() {
   const nextId = useRef(100)
   const target = Math.max(1, Math.round((Number(weight) || 0) * (overFifty ? 1.2 : 0.8)))
 
+  const restart = () => {
+    setWeight('')
+    setScreen('title')
+  }
+
   const startGame = () => {
     setProtein(0); setCaught([]); setFalling([]); setPlateX(50)
     setSeconds(15); setShowHint(true); setCountdown(5)
@@ -211,7 +216,7 @@ function App() {
             {Object.values(totals).map(({ food, count }) => <div key={food.name}><span>{food.name}{count > 1 ? ` x${count}` : ''}</span><i /><b>{food.protein * count}g</b></div>)}
           </div>
           <div className="result-actions">
-            <button aria-label="Restart" onClick={() => setScreen('title')} />
+            <button aria-label="Restart" onClick={restart} />
             <a href="https://www.healthhub.sg/well-being-and-lifestyle/active-ageing/seniors-need-more-protein" target="_blank" rel="noreferrer">
               <img src="/qr/qrcode.svg" alt="HealthHub protein guide QR code" /><span>Tips on Healthier<br />Eating Habits</span>
             </a>
