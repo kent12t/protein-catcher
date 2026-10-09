@@ -164,7 +164,7 @@ function App() {
         const food = FOODS[Math.floor(Math.random() * FOODS.length)]
         fallingRef.current.push({
           ...food, id: nextId.current++, x: 10 + Math.random() * 80, y: -12,
-          speed: 0.48 + Math.random() * 0.2,
+          speed: 0.9 + Math.random() * 0.35,
         })
       }
       setFalling([...fallingRef.current])
