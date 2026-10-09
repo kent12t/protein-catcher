@@ -5,8 +5,31 @@ type Screen = 'title' | 'calculator' | 'ready' | 'game' | 'summary'
 type Food = { id: number; name: string; image: string; protein: number }
 type FallingFood = Food & { x: number; y: number; speed: number }
 
+const GAME_IMAGES = [
+  '/background/game.webp',
+  '/background/bricks.webp',
+  '/misc/bowl.webp',
+  '/misc/arrow.webp',
+]
+
+const SUMMARY_IMAGES = [
+  '/background/end_screen.webp',
+  '/misc/end_title.webp',
+  '/misc/restart_button.webp',
+  ...Array.from({ length: 12 }, (_, index) => `/cheatsheet/cheatsheet_${index + 1}.webp`),
+]
+
+// CSS backgrounds and <img> tags are not requested until that screen is on screen.
+// Decoding ahead of time puts the bitmap in the browser cache before the swap.
+function preload(src: string) {
+  const image = new Image()
+  image.decoding = 'async'
+  image.src = src
+  image.decode().catch(() => {})
+}
+
 const FOODS: Food[] = [
-  { id: 1, name: "Egg", image: "egg1.webp", protein: 7 }, // 3 eggs = ~21g
+  { id: 1, name: "Egg", image: "egg2.webp", protein: 7 }, // 3 eggs = ~21g
   { id: 2, name: "Chicken", image: "chicken.webp", protein: 22 }, // 1 palm-sized piece (90g)
   { id: 3, name: "Fish", image: "fish.webp", protein: 22 }, // 1 palm-sized piece (90g)
   { id: 4, name: "Prawn", image: "shrimp.webp", protein: 4 }, // ~1/5th of 5-6 prawns
@@ -64,6 +87,17 @@ function App() {
     setPlateX(percent)
     setShowHint(false)
   }, [])
+
+  useEffect(() => {
+    const images = [...GAME_IMAGES, ...FOODS.map((food) => `/food/${food.image}`)]
+    const start = window.setTimeout(() => images.forEach(preload), 0)
+    return () => window.clearTimeout(start)
+  }, [])
+
+  useEffect(() => {
+    if (screen !== 'ready' && screen !== 'game') return
+    SUMMARY_IMAGES.forEach(preload)
+  }, [screen])
 
   useEffect(() => {
     if (screen !== 'ready') return
