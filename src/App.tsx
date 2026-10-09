@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { audio } from './audio'
+import { SoundControls } from './SoundControls'
 import './App.css'
 
 type Screen = 'title' | 'calculator' | 'ready' | 'game' | 'summary'
@@ -148,6 +150,7 @@ function App() {
           return !hit && item.y < 105
         })
       if (collected.length) {
+        collected.forEach(() => audio.playCatch())
         const gained = collected.reduce((sum, item) => sum + item.protein, 0)
         setCaught((current) => [...current, ...collected])
         setProtein((current) => {
@@ -174,12 +177,22 @@ function App() {
     return () => cancelAnimationFrame(frame)
   }, [screen, target])
 
+  useEffect(() => {
+    const menu = screen === 'title' || screen === 'calculator' || screen === 'summary'
+    audio.setTrack(menu ? 'menu' : 'game')
+  }, [screen])
+
+  useEffect(() => {
+    if (screen === 'summary') audio.playResult(protein >= target)
+  }, [screen, protein, target])
+
   const totals = caught.reduce<Record<string, { food: Food; count: number }>>((result, food) => {
     result[food.name] ??= { food, count: 0 }
     result[food.name].count += 1
     return result
   }, {})
 
+  const view = (() => {
   if (screen === 'title') return (
     <main className="gingham-screen title-screen">
       <section>
@@ -311,6 +324,14 @@ function App() {
         </div>
       </section>
     </main>
+  )
+  })()
+
+  return (
+    <>
+      <SoundControls />
+      {view}
+    </>
   )
 }
 
