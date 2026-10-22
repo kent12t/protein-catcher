@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { audio } from './audio'
 import { SoundControls } from './SoundControls'
 import './App.css'
@@ -6,6 +7,9 @@ import './App.css'
 type Screen = 'title' | 'calculator' | 'ready' | 'game' | 'summary'
 type Food = { id: number; name: string; image: string; protein: number }
 type FallingFood = Food & { x: number; y: number; speed: number }
+
+const STAGE_WIDTH = 1920
+const STAGE_HEIGHT = 1080
 
 const GAME_IMAGES = [
   '/background/game.webp',
@@ -15,7 +19,6 @@ const GAME_IMAGES = [
 ]
 
 const SUMMARY_IMAGES = [
-  '/background/end_screen.webp',
   '/misc/end_title.webp',
   '/misc/restart_button.webp',
   ...Array.from({ length: 12 }, (_, index) => `/cheatsheet/cheatsheet_${index + 1}.webp`),
@@ -45,6 +48,25 @@ const FOODS: Food[] = [
 ];
 
 function App() {
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const [stageScale, setStageScale] = useState(() => Math.min(
+    window.innerWidth / STAGE_WIDTH,
+    window.innerHeight / STAGE_HEIGHT,
+  ))
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+    const observer = new ResizeObserver(([entry]) => {
+      setStageScale(Math.min(
+        entry.contentRect.width / STAGE_WIDTH,
+        entry.contentRect.height / STAGE_HEIGHT,
+      ))
+    })
+    observer.observe(viewport)
+    return () => observer.disconnect()
+  }, [])
+
   const [screen, setScreen] = useState<Screen>('title')
   const [weight, setWeight] = useState('')
   const [overFifty, setOverFifty] = useState(true)
@@ -207,10 +229,13 @@ function App() {
   if (screen === 'calculator') return (
     <main className="gingham-screen calculator-screen">
       <section className="calculator">
-        <h2>Enter your weight and select your age group<br />to get your daily protein intake</h2>
+        <header className="calculator-heading">
+          <h2>Find your daily protein goal</h2>
+          <p>Enter your weight and choose your age group to get started.</p>
+        </header>
         <div className="calculator-grid">
           <div className="weight-column">
-            <label>Weight</label>
+            <h3><span className="step-number">1</span> Your weight <span className="field-unit">(kg)</span></h3>
             <div className={`weight-display ${weight ? '' : 'placeholder'}`}><strong>{weight || '65'}</strong><span>kg</span></div>
             <div className="numpad">
               {['1','2','3','4','5','6','7','8','9'].map((key) =>
@@ -221,24 +246,31 @@ function App() {
             </div>
           </div>
           <div className="age-column">
-            <h3>Age group:</h3><p>(Select your age group)</p>
+            <h3><span className="step-number">2</span> Your age group</h3>
             <div className="age-options">
-              <label><input type="radio" checked={overFifty} onChange={() => setOverFifty(true)} /> <span>&gt;50 years old</span></label>
-              <label><input type="radio" checked={!overFifty} onChange={() => setOverFifty(false)} /> <span>&lt;50 years old</span></label>
+              <label><input type="radio" checked={overFifty} onChange={() => setOverFifty(true)} /> <span>50 and above</span></label>
+              <label><input type="radio" checked={!overFifty} onChange={() => setOverFifty(false)} /> <span>Below 50</span></label>
             </div>
-            <p className="calculation">You will need <b>{weight || '—'}</b> kg x <b className="orange">{overFifty ? '1.2' : '0.8'}</b> g = <strong>{weight ? target : '—'}</strong> g of protein</p>
-            <p className="tip"><b>Pro tip:</b><br />If you’re 50 and above, you’ll need an estimated 1.2g of protein per kg of body weight daily.<br />If you’re below 50, an estimated 0.8g per kg daily is enough.</p>
+            <div className="protein-goal" aria-live="polite">
+              <div>
+                <p className="goal-label">Your daily protein goal</p>
+                <p className="goal-value"><strong>{weight ? target : '—'}</strong><span>g <span>of protein / day</span></span></p>
+              </div>
+              <p className="calculation">{weight ? `${weight} kg × ${overFifty ? '1.2' : '0.8'} g per kg` : 'Enter your weight to see your goal'}</p>
+            </div>
+            <p className="tip"><b>Why age matters</b><br />Adults aged 50 and above need an estimated 1.2g of protein per kg of body weight daily. Below 50, the estimate is 0.8g per kg.</p>
+            <div className="calculator-actions">
+              <span>{weight ? 'Your goal is set. Ready to catch some protein?' : 'Enter your weight to continue.'}</span>
+              <button className="image-button calculator-start" aria-label="Start game" disabled={!weight || Number(weight) === 0} onClick={startGame} />
+            </div>
           </div>
         </div>
-        <button className="image-button calculator-start" aria-label="Start game" disabled={!weight} onClick={startGame} />
       </section>
     </main>
   )
 
   if (screen === 'ready') return (
     <main className="ready-screen">
-      <div className="scene-bricks" />
-      <div className="scene-blur" />
       <section className="instructions">
         <p><b>1</b> Hold and drag the plate left and right</p>
         <p><b>2</b> Collect <strong><span className="windsor">{target}g</span></strong> of protein in 15 seconds</p>
@@ -251,10 +283,6 @@ function App() {
     const won = protein >= target
     return (
       <main className="summary-screen">
-        <div className="scene-bricks" />
-        <div className="scene-blur" />
-        <div className="scene-wash" />
-        <img className="end-screen" src="/background/end_screen.webp" alt="" />
         <section className="result-panel">
           <h1 className={won ? 'win' : 'lose'}><span className="windsor">{won ? 'GOOD JOB!' : 'OH NO!'}</span></h1>
           <h2 className={won ? 'win' : 'lose'}>{won ? 'You ate enough protein today!' : "You didn’t eat enough protein today!"}</h2>
@@ -328,10 +356,19 @@ function App() {
   })()
 
   return (
-    <>
-      <SoundControls />
-      {view}
-    </>
+    <div className={`app-viewport ${screen === 'title' || screen === 'calculator' ? 'menu-viewport' : 'game-viewport'}`} ref={viewportRef}
+      style={{ '--stage-scale': stageScale } as CSSProperties}>
+      <div className={`viewport-scenery scenery-${screen}`} aria-hidden="true">
+        {(screen === 'ready' || screen === 'game' || screen === 'summary') && <div className="scene-bricks" />}
+        {(screen === 'ready' || screen === 'summary') && <div className="scene-blur" />}
+        {screen === 'summary' && <div className="scene-wash" />}
+      </div>
+      {screen === 'summary' && <div className="result-gingham" aria-hidden="true" />}
+      <div className="app-stage" style={{ transform: `translate(-50%, -50%) scale(${stageScale})` }}>
+        <SoundControls />
+        {view}
+      </div>
+    </div>
   )
 }
 
