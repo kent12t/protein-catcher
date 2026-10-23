@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { audio } from './audio'
 import { SoundControls } from './SoundControls'
+import { useOfflineTracking } from './useOfflineTracking'
 import './App.css'
 
 type Screen = 'title' | 'calculator' | 'ready' | 'game' | 'summary'
@@ -82,7 +83,35 @@ function App() {
   const fallingRef = useRef<FallingFood[]>([])
   const dragging = useRef(false)
   const nextId = useRef(100)
+  const recordResult = useOfflineTracking()
+  const roundRef = useRef<{ startedAt: string; startedTick: number; finished: boolean } | null>(null)
+  const scoreRef = useRef(0)
+  const summaryTimer = useRef<number | undefined>(undefined)
   const target = Math.max(1, Math.round((Number(weight) || 0) * (overFifty ? 1.2 : 0.8)))
+
+  const finishGame = useCallback((score: number) => {
+    const round = roundRef.current
+    if (!round || round.finished) return
+    round.finished = true
+    dragging.current = false
+    const success = score >= target
+    recordResult({
+      weightKg: Number(weight),
+      ageGroup: overFifty ? '50 and above' : 'Below 50',
+      scoreGrams: score,
+      targetGrams: target,
+      success,
+      elapsedSeconds: Math.round((performance.now() - round.startedTick) / 10) / 100,
+      startedAt: round.startedAt,
+    })
+    if (success) {
+      summaryTimer.current = window.setTimeout(() => setScreen('summary'), 550)
+    } else {
+      setScreen('summary')
+    }
+  }, [weight, overFifty, target, recordResult])
+
+  useEffect(() => () => window.clearTimeout(summaryTimer.current), [])
 
   const restart = () => {
     setWeight('')
@@ -90,6 +119,8 @@ function App() {
   }
 
   const startGame = () => {
+    roundRef.current = null
+    scoreRef.current = 0
     setProtein(0); setCaught([]); setFalling([]); setPlateX(50)
     setSeconds(15); setShowHint(true); setCountdown(5)
     fallingRef.current = []
@@ -140,18 +171,16 @@ function App() {
 
   useEffect(() => {
     if (screen !== 'game') return
+    roundRef.current ??= { startedAt: new Date().toISOString(), startedTick: performance.now(), finished: false }
     const timer = window.setInterval(() => {
-      setSeconds((current) => {
-        if (current <= 1) {
-          window.clearInterval(timer)
-          setScreen('summary')
-          return 0
-        }
-        return current - 1
-      })
-    }, 1000)
+      const round = roundRef.current
+      if (!round || round.finished) return
+      const remaining = Math.max(0, 15 - (performance.now() - round.startedTick) / 1000)
+      setSeconds(Math.ceil(remaining))
+      if (remaining === 0) finishGame(scoreRef.current)
+    }, 100)
     return () => window.clearInterval(timer)
-  }, [screen])
+  }, [screen, finishGame])
 
   useEffect(() => {
     if (screen !== 'game') return
@@ -159,6 +188,12 @@ function App() {
     let spawnTimer = 0
     let frame = 0
     const tick = (time: number) => {
+      if (roundRef.current?.finished) return
+      if (roundRef.current && time - roundRef.current.startedTick >= 15000) {
+        setSeconds(0)
+        finishGame(scoreRef.current)
+        return
+      }
       const elapsed = time - previous
       const delta = Math.min(elapsed / 16.67, 2)
       previous = time
@@ -175,14 +210,9 @@ function App() {
         collected.forEach(() => audio.playCatch())
         const gained = collected.reduce((sum, item) => sum + item.protein, 0)
         setCaught((current) => [...current, ...collected])
-        setProtein((current) => {
-          const next = current + gained
-          if (next >= target) {
-            dragging.current = false
-            window.setTimeout(() => setScreen('summary'), 550)
-          }
-          return next
-        })
+        scoreRef.current += gained
+        setProtein(scoreRef.current)
+        if (scoreRef.current >= target) finishGame(scoreRef.current)
       }
       if (spawnTimer > 1050) {
         spawnTimer = 0
@@ -197,7 +227,7 @@ function App() {
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [screen, target])
+  }, [screen, target, finishGame])
 
   useEffect(() => {
     const menu = screen === 'title' || screen === 'calculator' || screen === 'summary'
