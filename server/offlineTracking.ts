@@ -1,11 +1,38 @@
 import { randomUUID } from 'node:crypto'
-import { mkdir, open, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, open, readFile, rename, writeFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { join } from 'node:path'
 import { isGameResult, isLocalhost, RESULTS_ENDPOINT, resultsToCsv } from '../src/offlineTracking.ts'
 import type { GameResult } from '../src/offlineTracking.ts'
 
 const DEVICE_FILE = '.protein-catcher-device.local'
+
+async function upgradeCsv(path: string) {
+  let content: string
+  try {
+    content = await readFile(path, 'utf8')
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return
+    throw error
+  }
+  if (!content) return
+  const rows = content.replace(/^\uFEFF/, '').split(/\r\n|\n|\r/)
+  const header = resultsToCsv([]).replace(/^\uFEFF/, '').trimEnd()
+  if (rows[0] === header) return
+  if (rows[0] !== header.replace(/,"language"$/, '')) {
+    throw new Error('Unrecognized offline CSV header')
+  }
+  if (rows.at(-1) === '') rows.pop()
+  // Validate the legacy layout before changing a locally editable file.
+  if (rows.slice(1).some((row) => !/^"(?:[^"]|"")*"(?:,"(?:[^"]|"")*"){6}$/.test(row))) {
+    throw new Error('Unrecognized legacy offline CSV row')
+  }
+  const upgraded = '\uFEFF' + header + '\r\n'
+    + rows.slice(1).map((row) => row + ',""\r\n').join('')
+  const temporaryPath = `${path}.tmp`
+  await writeFile(temporaryPath, upgraded, 'utf8')
+  await rename(temporaryPath, path)
+}
 
 async function getDeviceId(root: string) {
   const path = join(root, DEVICE_FILE)
@@ -29,6 +56,7 @@ export function createResultWriter(root: string) {
       const directory = join(root, 'offline-results')
       await mkdir(directory, { recursive: true })
       const path = join(directory, `protein-catcher-${deviceId}.csv`)
+      await upgradeCsv(path)
       const file = await open(path, 'a+')
       try {
         const { size } = await file.stat()

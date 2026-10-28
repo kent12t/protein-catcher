@@ -35,6 +35,10 @@ CSV columns:
 - `success`: `true` when the goal was reached, otherwise `false`.
 - `time_taken_seconds`: elapsed gameplay time, excluding the countdown and result animation.
 - `time_start_iso`: gameplay start time in ISO 8601 UTC.
+- `language`: selected game language: `en` (English), `ms` (Malay), `zh` (Chinese), or `ta` (Tamil).
+
+Existing CSVs are upgraded automatically on the next completed game. Older rows
+have a blank language because their selected language was not recorded.
 
 Interrupted games are not recorded. Tracking is disabled on hosted domains and
 LAN IP addresses, and the endpoint only accepts local requests. File-writing

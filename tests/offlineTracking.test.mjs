@@ -8,6 +8,7 @@ import { isGameResult, isLocalhost, RESULTS_ENDPOINT, resultsToCsv } from '../sr
 import { createResultWriter, createTrackingMiddleware } from '../server/offlineTracking.ts'
 
 const success = {
+  language: 'en',
   weightKg: 65,
   ageGroup: '50 and above',
   scoreGrams: 80,
@@ -28,18 +29,21 @@ test('tracking only accepts loopback hostnames', () => {
 
 test('only accepts complete, valid game results', () => {
   assert.equal(isGameResult(success), true)
-  for (const result of [null, {}, { ...success, elapsedSeconds: '10' }, { ...success, weightKg: -1 }, { ...success, startedAt: 'invalid' }]) {
+  for (const language of ['en', 'ms', 'zh', 'ta']) {
+    assert.equal(isGameResult({ ...success, language }), true)
+  }
+  for (const result of [null, {}, { ...success, language: undefined }, { ...success, language: 'fr' }, { ...success, elapsedSeconds: '10' }, { ...success, weightKg: -1 }, { ...success, startedAt: 'invalid' }]) {
     assert.equal(isGameResult(result), false)
   }
 })
 
 test('exports wins and losses with units, start time, and spreadsheet-friendly CSV', () => {
-  const failure = { ...success, ageGroup: 'Below 50', scoreGrams: 20, targetGrams: 52, success: false, elapsedSeconds: 15 }
+  const failure = { ...success, language: 'ta', ageGroup: 'Below 50', scoreGrams: 20, targetGrams: 52, success: false, elapsedSeconds: 15 }
   assert.equal(resultsToCsv([success, failure]),
-    '\uFEFF"weight_kg","age_group","score_grams","target_grams","success","time_taken_seconds","time_start_iso"\r\n'
-    + '"65","50 and above","80","78","true","10.25","2026-10-23T12:00:00.000Z"\r\n'
-    + '"65","Below 50","20","52","false","15","2026-10-23T12:00:00.000Z"\r\n')
-  assert.equal(resultsToCsv([success], false), '"65","50 and above","80","78","true","10.25","2026-10-23T12:00:00.000Z"\r\n')
+    '\uFEFF"weight_kg","age_group","score_grams","target_grams","success","time_taken_seconds","time_start_iso","language"\r\n'
+    + '"65","50 and above","80","78","true","10.25","2026-10-23T12:00:00.000Z","en"\r\n'
+    + '"65","Below 50","20","52","false","15","2026-10-23T12:00:00.000Z","ta"\r\n')
+  assert.equal(resultsToCsv([success], false), '"65","50 and above","80","78","true","10.25","2026-10-23T12:00:00.000Z","en"\r\n')
 })
 
 test('creates a device CSV, appends concurrent games, and reuses it after restart', async (t) => {
@@ -65,6 +69,19 @@ test('creates a device CSV, appends concurrent games, and reuses it after restar
   t.after(() => rm(otherRoot, { recursive: true, force: true }))
   await createResultWriter(otherRoot)(success)
   assert.notEqual((await readdir(join(otherRoot, 'offline-results')))[0], files[0])
+})
+
+test('upgrades legacy CSVs with blank historical languages before appending', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'protein-tracking-legacy-'))
+  t.after(() => rm(root, { recursive: true, force: true }))
+  await createResultWriter(root)(success)
+  const [filename] = await readdir(join(root, 'offline-results'))
+  const path = join(root, 'offline-results', filename)
+  const legacy = resultsToCsv([success]).replace(',"language"', '').replace(',"en"', '').trimEnd()
+  await writeFile(path, legacy)
+  await createResultWriter(root)({ ...success, language: 'zh' })
+  assert.equal(await readFile(path, 'utf8'), resultsToCsv([success]).replace(',"en"', ',""')
+    + resultsToCsv([{ ...success, language: 'zh' }], false))
 })
 
 test('local endpoint persists results and rejects hosted or invalid requests', async (t) => {

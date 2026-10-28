@@ -94,6 +94,7 @@ function App() {
     dragging.current = false
     const success = score >= target
     recordResult({
+      language,
       weightKg: Number(weight),
       ageGroup: overFifty ? '50 and above' : 'Below 50',
       scoreGrams: score,
@@ -107,7 +108,7 @@ function App() {
     } else {
       setScreen('summary')
     }
-  }, [weight, overFifty, target, recordResult])
+  }, [weight, overFifty, target, recordResult, language])
 
   useEffect(() => () => window.clearTimeout(summaryTimer.current), [])
 
