@@ -325,9 +325,13 @@ function App() {
           </div>
           <div className="result-actions">
             <button aria-label={copy.restart} onClick={restart} />
-            <a href="https://www.healthhub.sg/well-being-and-lifestyle/active-ageing/seniors-need-more-protein" target="_blank" rel="noreferrer">
-              <img src="/qr/qrcode.svg" alt={copy.qr} /><span className="copy-lines">{copy.healthyTips}</span>
-            </a>
+            <div className="qr-guide">
+              <div className="qr-code">
+                <img src="/qr/qrcode.png" alt={copy.qr} />
+                <span className="qr-url">https://for.sg/eatbetter</span>
+              </div>
+              <span className="copy-lines">{copy.healthyTips}</span>
+            </div>
           </div>
         </section>
         <section className="cheatsheet-panel">
