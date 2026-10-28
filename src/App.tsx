@@ -3,10 +3,12 @@ import type { CSSProperties } from 'react'
 import { audio } from './audio'
 import { SoundControls } from './SoundControls'
 import { useOfflineTracking } from './useOfflineTracking'
+import { copies, languages, localizedImage } from './copy'
+import type { Language } from './copy'
 import './App.css'
 
 type Screen = 'title' | 'calculator' | 'ready' | 'game' | 'summary'
-type Food = { id: number; name: string; image: string; protein: number }
+type Food = { id: number; name: keyof typeof copies.en.foods; image: string; protein: number }
 type FallingFood = Food & { x: number; y: number; speed: number }
 
 const STAGE_WIDTH = 1920
@@ -17,12 +19,6 @@ const GAME_IMAGES = [
   '/background/bricks.webp',
   '/misc/bowl.webp',
   '/misc/arrow.webp',
-]
-
-const SUMMARY_IMAGES = [
-  '/misc/end_title.webp',
-  '/misc/restart_button.webp',
-  ...Array.from({ length: 12 }, (_, index) => `/cheatsheet/cheatsheet_${index + 1}.webp`),
 ]
 
 // CSS backgrounds and <img> tags are not requested until that screen is on screen.
@@ -49,6 +45,8 @@ const FOODS: Food[] = [
 ];
 
 function App() {
+  const [language, setLanguage] = useState<Language>('en')
+  const copy = copies[language]
   const viewportRef = useRef<HTMLDivElement>(null)
   const [stageScale, setStageScale] = useState(() => Math.min(
     window.innerWidth / STAGE_WIDTH,
@@ -151,8 +149,9 @@ function App() {
 
   useEffect(() => {
     if (screen !== 'ready' && screen !== 'game') return
-    SUMMARY_IMAGES.forEach(preload)
-  }, [screen])
+    ;(['end_title', 'restart_button', 'cheatsheet'] as const)
+      .forEach((name) => preload(localizedImage(name, language)))
+  }, [screen, language])
 
   useEffect(() => {
     if (screen !== 'ready') return
@@ -247,12 +246,18 @@ function App() {
   const view = (() => {
   if (screen === 'title') return (
     <main className="gingham-screen title-screen">
+      <nav className="language-switcher" aria-label={copy.language}>
+        {languages.map(({ code, label }) => (
+          <button key={code} type="button" lang={code} aria-pressed={language === code}
+            onClick={() => setLanguage(code)}>{label}</button>
+        ))}
+      </nav>
       <section>
-        <h1><span className="windsor">PROTEIN MUNCHER</span></h1>
-        <p>Do you know how much<br />protein you need in a day?</p>
-        <button className="image-button start-button" aria-label="Start" onClick={() => setScreen('calculator')} />
+        <h1><span className="windsor">{copy.title}</span></h1>
+        <p className="copy-lines">{copy.intro}</p>
+        <button className="image-button start-button" aria-label={copy.start} onClick={() => setScreen('calculator')} />
       </section>
-      <img className="title-food" src="/misc/title_plate.webp" alt="A plate of protein-rich foods" />
+      <img className="title-food" src="/misc/title_plate.webp" alt={copy.titleFood} />
     </main>
   )
 
@@ -260,38 +265,35 @@ function App() {
     <main className="gingham-screen calculator-screen">
       <section className="calculator">
         <header className="calculator-heading">
-          <h2>Find your daily protein goal</h2>
-          <p>Enter your weight and choose your age group to get started.</p>
+          <h2>{copy.calculatorTitle}</h2>
         </header>
         <div className="calculator-grid">
           <div className="weight-column">
-            <h3><span className="step-number">1</span> Your weight <span className="field-unit">(kg)</span></h3>
+            <h3><span className="step-number">1</span> {copy.weight} <span className="field-unit">(kg)</span></h3>
             <div className={`weight-display ${weight ? '' : 'placeholder'}`}><strong>{weight || '65'}</strong><span>kg</span></div>
             <div className="numpad">
               {['1','2','3','4','5','6','7','8','9'].map((key) =>
                 <button key={key} onClick={() => enterDigit(key)}><span className="windsor">{key}</span></button>)}
               <span />
               <button onClick={() => enterDigit('0')}><span className="windsor">0</span></button>
-              <button aria-label="Delete last digit" onClick={() => setWeight((value) => value.slice(0, -1))}><span className="windsor">←</span></button>
+              <button aria-label={copy.deleteDigit} onClick={() => setWeight((value) => value.slice(0, -1))}><span className="windsor">←</span></button>
             </div>
           </div>
           <div className="age-column">
-            <h3><span className="step-number">2</span> Your age group</h3>
+            <h3><span className="step-number">2</span> {copy.ageGroup}</h3>
             <div className="age-options">
-              <label><input type="radio" checked={overFifty} onChange={() => setOverFifty(true)} /> <span>50 and above</span></label>
-              <label><input type="radio" checked={!overFifty} onChange={() => setOverFifty(false)} /> <span>Below 50</span></label>
+              <label><input type="radio" checked={overFifty} onChange={() => setOverFifty(true)} /> <span>{copy.older}</span></label>
+              <label><input type="radio" checked={!overFifty} onChange={() => setOverFifty(false)} /> <span>{copy.younger}</span></label>
             </div>
             <div className="protein-goal" aria-live="polite">
-              <div>
-                <p className="goal-label">Your daily protein goal</p>
-                <p className="goal-value"><strong>{weight ? target : '—'}</strong><span>g <span>of protein / day</span></span></p>
-              </div>
-              <p className="calculation">{weight ? `${weight} kg × ${overFifty ? '1.2' : '0.8'} g per kg` : 'Enter your weight to see your goal'}</p>
+              <p className="calculation">{copy.calculation
+                .replace('{weight}', weight || '—')
+                .replace('{rate}', overFifty ? '1.2' : '0.8')
+                .replace('{target}', weight ? String(target) : '—')}</p>
             </div>
-            <p className="tip"><b>Why age matters</b><br />Adults aged 50 and above need an estimated 1.2g of protein per kg of body weight daily. Below 50, the estimate is 0.8g per kg.</p>
+            <p className="tip">{copy.ageExplanation}</p>
             <div className="calculator-actions">
-              <span>{weight ? 'Your goal is set. Ready to catch some protein?' : 'Enter your weight to continue.'}</span>
-              <button className="image-button calculator-start" aria-label="Start game" disabled={!weight || Number(weight) === 0} onClick={startGame} />
+              <button className="image-button calculator-start" aria-label={copy.startGame} disabled={!weight || Number(weight) === 0} onClick={startGame} />
             </div>
           </div>
         </div>
@@ -302,8 +304,8 @@ function App() {
   if (screen === 'ready') return (
     <main className="ready-screen">
       <section className="instructions">
-        <p><b>1</b> Hold and drag the plate left and right</p>
-        <p><b>2</b> Collect <strong><span className="windsor">{target}g</span></strong> of protein in 15 seconds</p>
+        <p><b>1</b> {copy.dragInstruction}</p>
+        <p><b>2</b> {copy.collectBefore} <strong><span className="windsor">{target}{copy.gram}</span></strong> {copy.collectAfter}</p>
         <h1><span className="windsor">{countdown}</span></h1>
       </section>
     </main>
@@ -314,22 +316,22 @@ function App() {
     return (
       <main className="summary-screen">
         <section className="result-panel">
-          <h1 className={won ? 'win' : 'lose'}><span className="windsor">{won ? 'GOOD JOB!' : 'OH NO!'}</span></h1>
-          <h2 className={won ? 'win' : 'lose'}>{won ? 'You ate enough protein today!' : "You didn’t eat enough protein today!"}</h2>
-          <p>Your daily protein goal: <strong>{target}g</strong><br />Protein eaten today: <strong className={won ? 'eaten' : 'short'}>{protein}g</strong></p>
+          <h1 className={won ? 'win' : 'lose'}><span className="windsor">{won ? copy.winTitle : copy.loseTitle}</span></h1>
+          <h2 className={won ? 'win' : 'lose'}>{won ? copy.winMessage : copy.loseMessage}</h2>
+          <p>{won ? copy.winDailyGoal : copy.dailyGoal}: <strong>{target}{copy.gram}</strong><br />{won ? copy.winEatenToday : copy.eatenToday}: <strong className={won ? 'eaten' : 'short'}>{protein}{copy.gram}</strong></p>
           <div className="eaten-list">
-            {Object.values(totals).map(({ food, count }) => <div key={food.name}><span>{food.name}{count > 1 ? ` x${count}` : ''}</span><i /><b>{food.protein * count}g</b></div>)}
+            {Object.values(totals).map(({ food, count }) => <div key={food.name}><span>{copy.foods[food.name]}{count > 1 ? ` x${count}` : ''}</span><i /><b>{food.protein * count}{copy.gram}</b></div>)}
           </div>
           <div className="result-actions">
-            <button aria-label="Restart" onClick={restart} />
+            <button aria-label={copy.restart} onClick={restart} />
             <a href="https://www.healthhub.sg/well-being-and-lifestyle/active-ageing/seniors-need-more-protein" target="_blank" rel="noreferrer">
-              <img src="/qr/qrcode.svg" alt="HealthHub protein guide QR code" /><span>Tips on Healthier<br />Eating Habits</span>
+              <img src="/qr/qrcode.svg" alt={copy.qr} /><span className="copy-lines">{copy.healthyTips}</span>
             </a>
           </div>
         </section>
         <section className="cheatsheet-panel">
-          <img className="end-title" src="/misc/end_title.webp" alt="Mix and match to meet your daily protein goal" />
-          <div className="cheatsheet-grid">{Array.from({ length: 12 }, (_, index) => <img key={index} src={`/cheatsheet/cheatsheet_${index + 1}.webp`} alt="" />)}</div>
+          <img className="end-title" src={localizedImage('end_title', language)} alt={copy.endTitle} />
+          <img className="cheatsheet-grid" src={localizedImage('cheatsheet', language)} alt={copy.cheatsheet} />
         </section>
       </main>
     )
@@ -341,15 +343,15 @@ function App() {
       onPointerMove={(event) => dragging.current && movePlate(event.clientX)}
       onPointerUp={() => { dragging.current = false }}
       onPointerCancel={() => { dragging.current = false }}>
-      <p className="game-instruction">Catch protein-rich foods by dragging<br />the plate to meet your daily goal!</p>
+      <p className="game-instruction copy-lines">{copy.gameInstruction}</p>
       <div className={`timer ${seconds <= 5 ? 'ending' : ''}`}>00:{String(seconds).padStart(2, '0')}</div>
-      <div className="protein-meter" aria-label={`${protein} of ${target} grams of protein`}>
-        <span>{target}g</span><div><i style={{ height: `${Math.min((protein / target) * 100, 100)}%` }}><b>{protein}</b></i></div>
+      <div className="protein-meter" aria-label={copy.proteinMeter.replace('{protein}', String(protein)).replace('{target}', String(target))}>
+        <span>{target}{copy.gram}</span><div><i style={{ height: `${Math.min((protein / target) * 100, 100)}%` }}><b>{protein}</b></i></div>
       </div>
       <section className="play-field">
         {falling.map((food) => <div className="falling-food" key={food.id}
           style={{ left: `${food.x}%`, top: `${food.y}%` }}>
-          <img src={`/food/${food.image}`} alt={food.name} draggable={false} />
+          <img src={`/food/${food.image}`} alt={copy.foods[food.name]} draggable={false} />
         </div>)}
         <div className="plate-control" style={{ left: `${plateX}%` }}
           onDragStart={(event) => event.preventDefault()}
@@ -359,7 +361,7 @@ function App() {
             event.currentTarget.setPointerCapture(event.pointerId)
             movePlate(event.clientX)
           }}
-          role="slider" aria-label="Plate position" aria-valuenow={Math.round(plateX)} tabIndex={0}
+          role="slider" aria-label={copy.platePosition} aria-valuenow={Math.round(plateX)} tabIndex={0}
           onKeyDown={(event) => {
             const bounds = gameRef.current?.getBoundingClientRect()
             if (!bounds) return
@@ -374,11 +376,11 @@ function App() {
               }}><img src={`/food/${food.image}`} alt="" draggable={false} /></span>
             ))}
           </div>
-          <img className="bowl" src="/misc/bowl.webp" alt="Bowl" draggable={false} />
+          <img className="bowl" src="/misc/bowl.webp" alt={copy.bowl} draggable={false} />
         </div>
         <div className={`drag-arrows ${showHint ? '' : 'hidden'}`}>
           <img className="drag-arrow left" src="/misc/arrow.webp" alt="" draggable={false} />
-          <img className="drag-arrow" src="/misc/arrow.webp" alt="Drag left and right" draggable={false} />
+          <img className="drag-arrow" src="/misc/arrow.webp" alt={copy.dragHint} draggable={false} />
         </div>
       </section>
     </main>
@@ -387,7 +389,11 @@ function App() {
 
   return (
     <div className={`app-viewport ${screen === 'title' || screen === 'calculator' ? 'menu-viewport' : 'game-viewport'}`} ref={viewportRef}
-      style={{ '--stage-scale': stageScale } as CSSProperties}>
+      lang={language}
+      style={{ '--stage-scale': stageScale,
+        '--start-button': `url("${localizedImage('start_button', language)}")`,
+        '--restart-button': `url("${localizedImage('restart_button', language)}")`,
+      } as CSSProperties}>
       <div className={`viewport-scenery scenery-${screen}`} aria-hidden="true">
         {(screen === 'ready' || screen === 'game' || screen === 'summary') && <div className="scene-bricks" />}
         {(screen === 'ready' || screen === 'summary') && <div className="scene-blur" />}
@@ -395,7 +401,7 @@ function App() {
       </div>
       {screen === 'summary' && <div className="result-gingham" aria-hidden="true" />}
       <div className="app-stage" style={{ transform: `translate(-50%, -50%) scale(${stageScale})` }}>
-        <SoundControls />
+        <SoundControls copy={copy} />
         {view}
       </div>
     </div>

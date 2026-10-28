@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { AudioLines, Music } from 'lucide-react'
 import { audio } from './audio'
+import type { Copy } from './copy/en'
 
-export function SoundControls() {
+export function SoundControls({ copy }: { copy: Copy }) {
   const [bgmMuted, setBgmMuted] = useState(audio.isBgmMuted)
   const [sfxMuted, setSfxMuted] = useState(audio.isSfxMuted)
 
@@ -17,7 +18,7 @@ export function SoundControls() {
       <button
         type="button"
         className={bgmMuted ? 'is-muted' : ''}
-        aria-label={bgmMuted ? 'Unmute music' : 'Mute music'}
+        aria-label={bgmMuted ? copy.unmuteMusic : copy.muteMusic}
         aria-pressed={bgmMuted}
         onClick={() => {
           const next = !bgmMuted
@@ -30,7 +31,7 @@ export function SoundControls() {
       <button
         type="button"
         className={sfxMuted ? 'is-muted' : ''}
-        aria-label={sfxMuted ? 'Unmute sound effects' : 'Mute sound effects'}
+        aria-label={sfxMuted ? copy.unmuteEffects : copy.muteEffects}
         aria-pressed={sfxMuted}
         onClick={() => {
           const next = !sfxMuted
