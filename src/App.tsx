@@ -271,7 +271,7 @@ function App() {
         <div className="calculator-grid">
           <div className="weight-column">
             <h3><span className="step-number">1</span> {copy.weight} <span className="field-unit">(kg)</span></h3>
-            <div className={`weight-display ${weight ? '' : 'placeholder'}`}><strong>{weight || '65'}</strong><span>kg</span></div>
+            <div className={`weight-display ${weight ? '' : 'placeholder'}`}><strong>{weight}</strong><span>kg</span></div>
             <div className="numpad">
               {['1','2','3','4','5','6','7','8','9'].map((key) =>
                 <button key={key} onClick={() => enterDigit(key)}><span className="windsor">{key}</span></button>)}
