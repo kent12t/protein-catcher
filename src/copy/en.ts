@@ -10,7 +10,7 @@ const en = {
   weight: 'Weight',
   deleteDigit: 'Delete last digit',
   ageGroup: 'Age group',
-  older: '50 years old',
+  older: '50 years old and above',
   younger: '<50 years old',
   dailyGoal: 'Your daily protein goal',
   ageExplanation: "If you're 50 and above, you'll need an estimated 1.2g of protein per kg of body weight daily. If you're below 50, an estimated 0.8g per kg daily is enough.",

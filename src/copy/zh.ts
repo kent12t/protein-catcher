@@ -13,7 +13,7 @@ const zh: Copy = {
   weight: '体重',
   deleteDigit: '删除最后一位数字',
   ageGroup: '年龄层',
-  older: '年满50岁',
+  older: '50 岁及以上',
   younger: '未满 50 岁',
   dailyGoal: '您的每日蛋白质目标',
   ageExplanation: '如果您年满50岁，每天每公斤体重约需摄入1.2克蛋白质。如果您未满50岁，每天每公斤体重摄入约0.8克蛋白质就足够了。',
@@ -43,8 +43,8 @@ const zh: Copy = {
   muteEffects: '关闭音效',
   unmuteEffects: '开启音效',
   foods: {
-    Egg: '鸡蛋', Chicken: 'Chicken', Fish: '鱼肉', Prawn: '虾', Milk: '低脂牛奶',
-    Tofu: '硬豆腐', Tempeh: '天贝', Edamame: '毛豆', Beef: 'Beef', Tuna: '金枪鱼', Yoghurt: 'Yoghurt',
+    Egg: '鸡蛋', Chicken: '鸡肉', Fish: '鱼肉', Prawn: '虾', Milk: '低脂牛奶',
+    Tofu: '硬豆腐', Tempeh: '天贝', Edamame: '毛豆', Beef: '牛肉', Tuna: '金枪鱼', Yoghurt: '酸奶',
   },
 }
 export default zh

@@ -43,8 +43,8 @@ const ms: Copy = {
   muteEffects: 'Senyapkan kesan bunyi',
   unmuteEffects: 'Hidupkan kesan bunyi',
   foods: {
-    Egg: 'Telur', Chicken: 'Ayam', Fish: 'Ikan', Prawn: 'Udang', Milk: 'Susu Rendah Lemak',
-    Tofu: 'Tauhu Keras', Tempeh: 'Tempeh', Edamame: 'Edamame', Beef: 'Beef', Tuna: 'Tuna', Yoghurt: 'Yoghurt',
+    Egg: 'Telur', Chicken: 'Daging ayam', Fish: 'Ikan', Prawn: 'Udang', Milk: 'Susu Rendah Lemak',
+    Tofu: 'Tauhu Keras', Tempeh: 'Tempeh', Edamame: 'Edamame', Beef: 'Daging lembu', Tuna: 'Tuna', Yoghurt: 'Yogurt',
   },
 }
 export default ms
