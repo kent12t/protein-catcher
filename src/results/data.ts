@@ -61,13 +61,17 @@ export function parseResults(text: string, source: string) {
 
 export type Filters = { age: string; language: string; outcome: string; source: string; from: string; to: string; min: string; max: string }
 export const emptyFilters: Filters = { age: '', language: '', outcome: '', source: '', from: '', to: '', min: '', max: '' }
+// Fixed UTC+8, independent of the browser's local timezone. No DST adjustment.
+export function utc8DateTime(date: string) {
+  return new Date(Date.parse(date) + 8 * 60 * 60 * 1000).toISOString().slice(0, 19)
+}
 export function filterResults(rows: Result[], filters: Filters) {
   return rows.filter((r) => (!filters.age || r.age === filters.age)
     && (!filters.language || r.language === filters.language)
     && (!filters.outcome || String(r.success) === filters.outcome)
     && (!filters.source || r.source === filters.source)
-    && (!filters.from || r.date.slice(0, 10) >= filters.from)
-    && (!filters.to || r.date.slice(0, 10) <= filters.to)
+    && (!filters.from || utc8DateTime(r.date).slice(0, 10) >= filters.from)
+    && (!filters.to || utc8DateTime(r.date).slice(0, 10) <= filters.to)
     && (filters.min === '' || r.weight >= Number(filters.min))
     && (filters.max === '' || r.weight <= Number(filters.max)))
 }

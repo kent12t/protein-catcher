@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { csvRows, emptyFilters, filterResults, parseResults } from '../src/results/data.ts'
+import { csvRows, emptyFilters, filterResults, parseResults, utc8DateTime } from '../src/results/data.ts'
 
 const header = 'weight_kg,age_group,score_grams,target_grams,success,time_taken_seconds,time_start_iso,language'
 const csv = header + '\r\n56,Below 50,46,45,true,7.67,2026-10-28T08:44:29.942Z,\r\n69,50 and above,22,83,false,15,2026-10-29T09:00:00.000Z,zh\r\n'
@@ -26,11 +26,20 @@ test('legacy CSV without language column is supported', () => {
   assert.equal(parseResults(legacy, 'old.csv').results[1].language, 'unknown')
 })
 
-test('filters combine and include both UTC date boundaries', () => {
+test('filters combine and include both UTC+8 date boundaries', () => {
   const { results } = parseResults(csv, 'device.csv')
   assert.equal(filterResults(results, emptyFilters).length, 2)
   const filters = { ...emptyFilters, from: '2026-10-29', to: '2026-10-29', age: '50 and above', language: 'zh', outcome: 'false', min: '69', max: '69', source: 'device.csv' }
   assert.deepEqual(filterResults(results, filters), [results[1]])
   assert.equal(filterResults(results, { ...filters, max: '68' }).length, 0)
   assert.equal(filterResults(results, { ...filters, from: '2026-10-30' }).length, 0)
+})
+
+test('UTC+8 timestamps and date filters roll over at 16:00 UTC', () => {
+  assert.equal(utc8DateTime('2026-12-31T16:00:00.000Z'), '2027-01-01T00:00:00')
+  assert.equal(utc8DateTime('2026-10-28T15:59:59.000Z'), '2026-10-28T23:59:59')
+  const { results } = parseResults(csv, 'device.csv')
+  const rows = ['2026-10-28T15:59:59.000Z', '2026-10-28T16:00:00.000Z', '2026-10-29T15:59:59.000Z', '2026-10-29T16:00:00.000Z'].map((date) => ({ ...results[0], date }))
+  assert.deepEqual(filterResults(rows, { ...emptyFilters, from: '2026-10-29', to: '2026-10-29' }), [rows[1], rows[2]])
+  assert.equal(rows[1].date, '2026-10-28T16:00:00.000Z')
 })

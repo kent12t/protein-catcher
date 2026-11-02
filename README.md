@@ -13,10 +13,12 @@ Rebuild to include changed CSV data, or use **Open CSVs** to replace the loaded
 dataset with one or more current local CSVs without rebuilding. Parsing happens
 in the browser; selected files are not uploaded or written back to disk.
 
-Filter by UTC date range (inclusive), age group, language, outcome, source file,
+Filter by UTC+8 date range (inclusive), age group, language, outcome, source file,
 and weight range. Summary cards, daily stacked bars, age-group success rates,
 and the paginated/sortable records table reflect the same filters. **Export
 filtered** downloads matching records, including their source filenames.
+Displayed timestamps and daily chart groups use fixed UTC+8, regardless of the
+browser timezone. Source CSVs and exported `time_start_iso` timestamps remain UTC.
 Blank historical languages appear as **Not recorded**. Invalid rows are skipped
 with a visible warning; unusual but valid weights are retained. Each row is a
 game, not necessarily a unique player. Opening overlapping CSVs counts their
