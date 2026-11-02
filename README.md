@@ -1,5 +1,31 @@
 # Protein Catcher
 
+## Standalone results explorer
+
+On the `results-visualisation` branch, run `npm install` and `npm run dev`, then
+open **http://localhost:5173/results.html**. The game remains at `/`; the explorer
+has its own HTML entry and does not load the game or record gameplay.
+
+The page includes all CSV files in `offline-results/` at build time. Run
+`npm run build` and `npm run preview` to view the production page at
+**http://localhost:4173/results.html**. Both HTML entries are included in `dist/`.
+Rebuild to include changed CSV data, or use **Open CSVs** to replace the loaded
+dataset with one or more current local CSVs without rebuilding. Parsing happens
+in the browser; selected files are not uploaded or written back to disk.
+
+Filter by UTC date range (inclusive), age group, language, outcome, source file,
+and weight range. Summary cards, daily stacked bars, age-group success rates,
+and the paginated/sortable records table reflect the same filters. **Export
+filtered** downloads matching records, including their source filenames.
+Blank historical languages appear as **Not recorded**. Invalid rows are skipped
+with a visible warning; unusual but valid weights are retained. Each row is a
+game, not necessarily a unique player. Opening overlapping CSVs counts their
+rows separately; choose only one copy of each dataset.
+
+**Privacy:** the bundled CSV data is readable by anyone who can access the built
+page. Keep results deployments private; `noindex` is not access control. The
+explorer needs an HTTP server (it is not a double-click `file://` page).
+
 ## Offline game tracking
 
 Run `npm install`, then `npm run dev` and open the localhost URL. For a built

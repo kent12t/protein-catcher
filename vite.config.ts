@@ -4,6 +4,11 @@ import { createTrackingMiddleware } from './server/offlineTracking.ts'
 
 // https://vite.dev/config/
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      input: { game: 'index.html', results: 'results.html' },
+    },
+  },
   plugins: [
     react(),
     {
