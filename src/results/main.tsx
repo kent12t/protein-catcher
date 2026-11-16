@@ -12,7 +12,7 @@ function loadFiles(entries: [string, string][]) {
   for (const [name, text] of entries) {
     try {
       const parsed = parseResults(text, name.split('/').pop()!)
-      results.push(...parsed.results)
+      results.push(...filterResults(parsed.results, { ...emptyFilters, from: '2026-10-30', to: '2026-10-31' }))
       if (parsed.skipped) notices.push(`${name}: skipped ${parsed.skipped} invalid rows.`)
     } catch (error) { notices.push(String(error)) }
   }

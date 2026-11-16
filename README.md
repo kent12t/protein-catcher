@@ -6,7 +6,9 @@ On the `results-visualisation` branch, run `npm install` and `npm run dev`, then
 open **http://localhost:5173/results.html**. The game remains at `/`; the explorer
 has its own HTML entry and does not load the game or record gameplay.
 
-The page includes all CSV files in `offline-results/` at build time. Run
+The page reads CSV files in `offline-results/` at build time and displays only
+October 30–31, 2026 (UTC+8), including when opening replacement CSVs. Original
+CSV files remain unchanged. Run
 `npm run build` and `npm run preview` to view the production page at
 **http://localhost:4173/results.html**. Both HTML entries are included in `dist/`.
 Rebuild to include changed CSV data, or use **Open CSVs** to replace the loaded
