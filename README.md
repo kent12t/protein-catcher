@@ -71,6 +71,6 @@ React, TypeScript, Vite, pointer input, browser audio, Oxlint.
 
 ## Credits
 
-Clarita planned the event and directed the visuals, and Nadiah designed the final UI. Raja and Tammy handled client servicing and the event.
+Clarita was the creative and set the theme and 2D direction, and Nadiah designed the final UI. Raja and Tammy handled client servicing and the event.
 
 I (Kent, [@kent12t](https://github.com/kent12t)) proposed the game, planned its educational content, drew the wireframes, and built it, largely with AI-assisted coding that I directed. `elnathanhung` committed event data.
